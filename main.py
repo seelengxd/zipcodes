@@ -19,7 +19,7 @@ def get_times(zc1, zc2):
     driver.find_elements_by_css_selector("[aria-label='Driving']")[0].click()
 
     # dont spam google + increasing delay to make the html load properly i think
-    time.sleep(1.2)
+    time.sleep(2)
 
     # parse out times on the browser after taking the html
     page = BeautifulSoup(driver.page_source, 'html.parser')
@@ -37,31 +37,29 @@ def get_times(zc1, zc2):
     return processed
 
 
-def find_min_time(zipcodes):
-    """return the 2 zipcode combination that has the shortest travelling time"""
+def find_sorted_times(zipcodes):
+    """return the travelling time of zipcode combinations in ascending order"""
 
     # if you need it to be both ways, just change it to permutations
     combinations = itertools.combinations(zipcodes, 2)
-    times = {}
-    for c1, c2 in combinations:
-        times[(c1, c2)] = min(get_times(c1, c2))
 
-    return min(times.items(), key=lambda i: i[1])
+    times = [(c1, c2, *min(get_times(c1, c2))) for c1, c2 in combinations]
+    times.sort(key=lambda i:(i[2], i[3]))
+
+    return times
 
 
 def main():
     """the gui that uses the above functions to find the shortest time"""
     layout = [
         [sg.Text("Enter zipcodes here!")],
-        [sg.Input(key='-IN-')],
-        [sg.Text('Zipcode 1: '), sg.Text('_______________', key="zc1")],
-        [sg.Text('Zipcode 2: '), sg.Text('_______________', key="zc2")],
-        [sg.Text('Hours: '), sg.Text('_______________', key="h")],
-        [sg.Text('Minutes: '), sg.Text('_______________', key="m")],
-        [sg.Button('Read'), sg.Exit()]
+        [sg.Input(key='-IN-', font='Gungsuh 16')],
+        [sg.Table(values=[['...', '...', '...', '...']], headings=['Zipcode 1', 'Zipcode 2', 'Hours', 'Minutes'], key='table', font='Gungsuh 16')],
+        [sg.Button('Read', bind_return_key=True), sg.Exit()]
     ]
 
     # Create the window
+    sg.theme('green')
     window = sg.Window("Zipcode stuff", layout)
 
     try:
@@ -70,12 +68,8 @@ def main():
             event, values = window.read()
             if event == 'Read':
                 zipcodes = re.split(' *, *', values['-IN-'])
-                (z1, z2), (hr, min_) = find_min_time(zipcodes)
-
-                window['zc1'].update(z1)
-                window['zc2'].update(z2)
-                window['h'].update(hr)
-                window['m'].update(min_)
+                output = find_sorted_times(zipcodes)
+                window['table'].update(output)
 
             elif event == "Exit" or event == sg.WIN_CLOSED:
                 break
