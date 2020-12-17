@@ -1,5 +1,4 @@
 beautifulsoup4==4.9.3
-bs4==0.0.1
 PySimpleGUI==4.32.1
 selenium==3.141.0
 soupsieve==2.1
